@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tower of Fantasy: как карабкаться бесконечно by ShizzyBoost</title>
+    <!-- Favicon (эмодзи скалолаза) -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧗</text></svg>">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+            background: #f8faff;  /* светлая база */
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* Холст с частицами на заднем плане */
+        #particles-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;  /* чтобы не перекрывать клики по карточке */
+            z-index: 1;
+        }
+
+        .card {
+            max-width: 1000px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 36px;
+            box-shadow: 0 30px 50px -20px rgba(0, 40, 80, 0.25), 0 10px 20px -8px rgba(0, 20, 40, 0.15);
+            padding: 30px 30px 40px;
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            position: relative;
+            z-index: 2;  /* над канвасом */
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #0a283f;
+            letter-spacing: -0.01em;
+            margin-bottom: 0.25em;
+            border-left: 6px solid #5f9bc0;
+            padding-left: 20px;
+            text-shadow: 0 2px 5px rgba(255, 255, 255, 0.8);
+        }
+
+        .byline {
+            font-size: 1.2rem;
+            color: #2d4e6e;
+            margin-bottom: 30px;
+            padding-left: 26px;
+            font-style: italic;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .byline::before {
+            content: '✦';
+            color: #9b8c5c;
+            font-size: 1.8rem;
+            line-height: 1;
+        }
+
+        /* стили для контента гайда */
+        .guide-content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            margin-top: 10px;
+        }
+
+        .platform {
+            flex: 1 1 280px;
+            background: rgba(255,255,255,0.7);
+            border-radius: 28px;
+            padding: 24px 22px;
+            box-shadow: 0 8px 22px -10px rgba(30, 60, 90, 0.2);
+            border: 1px solid rgba(255,255,255,0.8);
+            transition: transform 0.2s ease;
+        }
+
+        .platform:hover {
+            transform: translateY(-4px);
+            background: rgba(255,255,255,0.8);
+        }
+
+        .platform h3 {
+            font-size: 1.7rem;
+            font-weight: 600;
+            color: #144a6e;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 2px dashed #b1d4f0;
+            padding-bottom: 12px;
+        }
+
+        .platform p {
+            font-size: 1.1rem;
+            line-height: 1.5;
+            color: #1c405b;
+            margin-bottom: 20px;
+        }
+
+        .keyboard-shortcut {
+            background: #e6f0fa;
+            border-radius: 50px;
+            display: inline-flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 22px;
+            margin: 10px 0 5px;
+            border: 1px solid white;
+        }
+
+        .key {
+            display: inline-block;
+            background: white;
+            border-radius: 14px;
+            padding: 8px 18px;
+            font-family: 'Courier New', monospace;
+            font-weight: 700;
+            font-size: 1.3rem;
+            color: #0b3858;
+            box-shadow: 0 4px 0 #b0c9e0, 0 5px 12px rgba(0,0,0,0.05);
+            border: 1px solid #cddff5;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .key.small {
+            font-size: 1rem;
+            padding: 6px 12px;
+            min-width: auto;
+        }
+
+        .arrow {
+            font-size: 1.4rem;
+            color: #3f6b93;
+            font-weight: 500;
+        }
+
+        .mobile-tip {
+            background: #d4e7f7;
+            border-radius: 24px;
+            padding: 20px;
+            color: #0b2d46;
+            font-size: 1.1rem;
+            border: 1px solid white;
+        }
+
+        .mobile-tip strong {
+            color: #004b7c;
+            display: inline-block;
+            background: rgba(255,255,255,0.6);
+            padding: 2px 10px;
+            border-radius: 30px;
+            margin: 4px 0;
+        }
+
+        .note {
+            background: #edf5fe;
+            border-radius: 18px;
+            padding: 16px 20px;
+            margin-top: 30px;
+            border-left: 6px solid #5f9bc0;
+            font-size: 1rem;
+            color: #1b4b6e;
+        }
+
+        .note span {
+            font-weight: 700;
+            color: #0b3e5c;
+        }
+
+        footer {
+            margin-top: 30px;
+            text-align: right;
+            font-size: 0.9rem;
+            color: #4f6982;
+            padding-right: 8px;
+            border-top: 1px dashed #b8cfde;
+            padding-top: 20px;
+        }
+
+        footer span {
+            background: #e3effa;
+            color: #1b4b6e;
+            padding: 5px 16px;
+            border-radius: 40px;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+            border: 1px solid white;
+        }
+
+        @media (max-width: 700px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+            .platform h3 {
+                font-size: 1.4rem;
+            }
+        }
+
+        @media (max-width: 500px) {
+            .card {
+                padding: 20px 18px;
+            }
+            .keyboard-shortcut {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .arrow {
+                transform: rotate(90deg);
+            }
+        }
+
+        .table-wrapper::-webkit-scrollbar {
+            height: 8px;
+            background: #dbe4ed;
+            border-radius: 12px;
+        }
+        .table-wrapper::-webkit-scrollbar-thumb {
+            background: #89aec9;
+            border-radius: 12px;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="particles-canvas"></canvas>
+
+    <div class="card">
+        <h1>Tower of Fantasy: КАК КАРАБКАТЬСЯ БЕСКОНЕЧНО</h1>
+        <div class="byline">by ShizzyBoost</div>
+
+        <div class="guide-content">
+            <!-- Блок для ПК -->
+            <div class="platform pc">
+                <h3>🖥️ Компьютер</h3>
+                <p>Секрет бесконечного подъёма — особая последовательность клавиш. Когда цепляетесь за стену, нажмите:</p>
+                <div class="keyboard-shortcut">
+                    <span class="key">Ctrl</span>
+                    <span class="arrow">→</span>
+                    <span class="key">Пробел</span>
+                    <span class="arrow">→</span>
+                    <span class="key">W</span>
+                </div>
+                <p>Повторяйте цикл <strong>Ctrl → Пробел → W</strong> прямо во время подъёма. Выносливость перестанет уменьшаться — вы словно получите бесконечный запас!</p>
+                <p style="margin-top: 10px;"><span style="background: #cbe0f5; padding: 4px 12px; border-radius: 30px;">💡 Важно: нажимайте именно в таком порядке, не зажимая всё сразу.</span></p>
+            </div>
+
+            <!-- Блок для мобильных -->
+            <div class="platform mobile">
+                <h3>📱 Мобильная версия</h3>
+                <div class="mobile-tip">
+                    <p>📲 На сенсорном экране трюк тоже работает:</p>
+                    <ul style="margin-left: 20px; margin-top: 12px; list-style-type: '✓   '; color: #0b3858;">
+                        <li>Коснитесь <strong>значка падения</strong> (обычно изображает человечка, падающего/скользящего)</li>
+                        <li>Сразу после — коснитесь <strong>кнопки прыжка</strong></li>
+                        <li>И одновременно <strong>переместите джойстик вперёд</strong> (движение вверх по стене)</li>
+                    </ul>
+                    <p style="margin-top: 15px;">Повторяйте касания «падение → прыжок» и удерживайте джойстик. Выносливость замирает!</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Дополнительное объяснение эффекта -->
+        <div class="note">
+            <span>⚡ Суть трюка:</span> при правильном вводе команда сброса/перехвата обновляет состояние персонажа, и выносливость не успевает потратиться. Вы выглядите так, будто карабкаетесь вечно — идеально для исследования высоких точек.
+        </div>
+
+        <footer>
+            <span>ShizzyBoost — лайфхак для Tower of Fantasy | НА ТОВАРЕ АВТОРСКИЕ ПРАВА · ПЕРЕПРОДАЖА ЗАПРЕЩЕНА</span>
+        </footer>
+    </div>
+
+    <script>
+        (function() {
+            const canvas = document.getElementById('particles-canvas');
+            const ctx = canvas.getContext('2d');
+
+            // Настройки частиц
+            const PARTICLE_COUNT = 65;
+            const MAX_RADIUS = 5;
+            const MIN_RADIUS = 2;
+            const SPEED_FACTOR = 0.2;
+            const COLORS = [
+                'rgba(130, 180, 220, 0.35)',
+                'rgba(160, 200, 240, 0.4)',
+                'rgba(110, 160, 210, 0.3)',
+                'rgba(190, 215, 245, 0.45)'
+            ];
+
+            let particles = [];
+            let width, height;
+
+            function initParticles() {
+                width = window.innerWidth;
+                height = window.innerHeight;
+                particles = [];
+
+                for (let i = 0; i < PARTICLE_COUNT; i++) {
+                    particles.push({
+                        x: Math.random() * width,
+                        y: Math.random() * height,
+                        vx: (Math.random() - 0.5) * SPEED_FACTOR * 1.5,
+                        vy: (Math.random() - 0.5) * SPEED_FACTOR * 1.5,
+                        radius: MIN_RADIUS + Math.random() * (MAX_RADIUS - MIN_RADIUS),
+                        color: COLORS[Math.floor(Math.random() * COLORS.length)]
+                    });
+                }
+            }
+
+            function updateParticles() {
+                for (let p of particles) {
+                    p.x += p.vx;
+                    p.y += p.vy;
+
+                    if (p.x < 0) p.x = width;
+                    if (p.x > width) p.x = 0;
+                    if (p.y < 0) p.y = height;
+                    if (p.y > height) p.y = 0;
+                }
+            }
+
+            function drawParticles() {
+                ctx.clearRect(0, 0, width, height);
+
+                for (let p of particles) {
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = p.color;
+                    ctx.shadowColor = 'rgba(150, 190, 240, 0.3)';
+                    ctx.shadowBlur = 8;
+                    ctx.fill();
+                }
+                ctx.shadowBlur = 0;
+            }
+
+            function animate() {
+                updateParticles();
+                drawParticles();
+                requestAnimationFrame(animate);
+            }
+
+            window.addEventListener('resize', () => {
+                width = window.innerWidth;
+                height = window.innerHeight;
+                canvas.width = width;
+                canvas.height = height;
+                initParticles();
+            });
+
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            initParticles();
+            animate();
+        })();
+    </script>
+</body>
+</html>
